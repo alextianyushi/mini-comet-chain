@@ -59,11 +59,11 @@ func (app *KVStoreApplication) InitChain(_ context.Context, chain *abcitypes.Req
 }
 
 func (app *KVStoreApplication) PrepareProposal(_ context.Context, proposal *abcitypes.RequestPrepareProposal) (*abcitypes.ResponsePrepareProposal, error) {
-	return &abcitypes.ResponsePrepareProposal{}, nil
+	return &abcitypes.ResponsePrepareProposal{Txs: proposal.Txs}, nil
 }
 
 func (app *KVStoreApplication) ProcessProposal(_ context.Context, proposal *abcitypes.RequestProcessProposal) (*abcitypes.ResponseProcessProposal, error) {
-	return &abcitypes.ResponseProcessProposal{}, nil
+	return &abcitypes.ResponseProcessProposal{Status: abcitypes.ResponseProcessProposal_ACCEPT}, nil
 }
 
 func (app *KVStoreApplication) FinalizeBlock(_ context.Context, req *abcitypes.RequestFinalizeBlock) (*abcitypes.ResponseFinalizeBlock, error) {
