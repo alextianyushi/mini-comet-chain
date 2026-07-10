@@ -6,4 +6,6 @@ import (
 
 func main() {
 	fmt.Println("Hello, CometBFT")
+
+	_ = NewKVStoreApplication()
 }
