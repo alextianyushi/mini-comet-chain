@@ -17,7 +17,8 @@ in any language that can send and receive protocol buffer messages in a client-s
 Applications written in Go can also use CometBFT as a library and run the service in the same
 process as the application.
 
-By following along with this tutorial, you will create a CometBFT application called kvstore,
+By following along with this tutorial, you will create a project called `mini-comet-chain`
+containing a KV store application,
 a (very) simple distributed BFT key-value store.
 The application will be written in Go, and
 some understanding of the Go programming language is expected.
@@ -55,7 +56,7 @@ go version go1.22.11 darwin/amd64
 We'll start by creating a new Go project.
 
 ```bash theme={"theme":{"light":"github-light-high-contrast","dark":"github-dark-high-contrast"}}
-mkdir kvstore
+mkdir mini-comet-chain
 ```
 
 Inside the example directory, create a `main.go` file with the following content:
@@ -75,39 +76,30 @@ func main() {
 When run, this should print "Hello, CometBFT" to the standard output.
 
 ```bash theme={"theme":{"light":"github-light-high-contrast","dark":"github-dark-high-contrast"}}
-cd kvstore
+cd mini-comet-chain
 $ go run main.go
 Hello, CometBFT
 ```
 
 We are going to use [Go modules](https://github.com/golang/go/wiki/Modules) for
-dependency management, so let's start by including a dependency on the latest version of
-CometBFT, `v0.38.0` in this example.
+dependency management. This project uses CometBFT `v0.39.0`.
 
 ```bash theme={"theme":{"light":"github-light-high-contrast","dark":"github-dark-high-contrast"}}
-go mod init kvstore
-go get github.com/cometbft/cometbft@v0.38.0
+go mod init mini-comet-chain
+go get github.com/cometbft/cometbft@v0.39.0
 ```
 
 After running the above commands, you will see two generated files, `go.mod` and `go.sum`.
 The go.mod file should look similar to:
 
 ```go theme={"theme":{"light":"github-light-high-contrast","dark":"github-dark-high-contrast"}}
-module kvstore
+module mini-comet-chain
 
-go 1.22
+go 1.26.5
 
 require (
-github.com/cometbft/cometbft v0.38.0
+github.com/cometbft/cometbft v0.39.0
 )
-```
-
-XXX: CometBFT `v0.38.0` uses a slightly outdated `gogoproto` library, which
-may fail to compile with newer Go versions. To avoid any compilation errors,
-upgrade `gogoproto` manually:
-
-```bash theme={"theme":{"light":"github-light-high-contrast","dark":"github-dark-high-contrast"}}
-go get github.com/cosmos/gogoproto@v1.4.11
 ```
 
 As you write the kvstore application, you can rebuild the binary by
@@ -123,7 +115,7 @@ go build
 CometBFT communicates with the application through the Application
 BlockChain Interface (ABCI). The messages exchanged through the interface are
 defined in the ABCI [protobuf
-file](https://github.com/cometbft/cometbft/blob/v0.38.x/proto/tendermint/abci/types.proto).
+file](https://github.com/cometbft/cometbft/blob/v0.39.x/proto/tendermint/abci/types.proto).
 
 We begin by creating the basic scaffolding for an ABCI application by
 creating a new type, `KVStoreApplication`, which implements the
@@ -209,7 +201,7 @@ The types used here are defined in the CometBFT library and were added as a depe
 to the project when you ran `go get`. If your IDE is not recognizing the types, go ahead and run the command again.
 
 ```bash theme={"theme":{"light":"github-light-high-contrast","dark":"github-dark-high-contrast"}}
-go get github.com/cometbft/cometbft@v0.38.0
+go get github.com/cometbft/cometbft@v0.39.0
 ```
 
 Now go back to `main.go` and modify the `main` function so it matches the following,
@@ -596,12 +588,12 @@ signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
 Our application is almost ready to run, but first we'll need to populate the CometBFT configuration files.
 The following command will create a `cometbft-home` directory in your project and add a basic set of configuration files in `cometbft-home/config/`.
-For more information on what these files contain, see [the configuration documentation](https://github.com/cometbft/cometbft/blob/v0.38.x/docs/core/configuration.md).
+For more information on what these files contain, see [the configuration documentation](https://github.com/cometbft/cometbft/blob/v0.39.x/docs/core/configuration.md).
 
 From the root of your project, run:
 
 ```bash theme={"theme":{"light":"github-light-high-contrast","dark":"github-dark-high-contrast"}}
-go run github.com/cometbft/cometbft/cmd/cometbft@v0.38.0 init --home /tmp/cometbft-home
+go run github.com/cometbft/cometbft/cmd/cometbft@v0.39.0 init --home /tmp/cometbft-home
 ```
 
 You should see an output similar to the following:
@@ -615,13 +607,15 @@ I[2023-04-25|09:06:34.444] Generated genesis file                       module=m
 Now rebuild the app:
 
 ```bash theme={"theme":{"light":"github-light-high-contrast","dark":"github-dark-high-contrast"}}
-go build -mod=mod # use -mod=mod to automatically refresh the dependencies
+go build -mod=mod -o mini-comet-chain . # use -mod=mod to automatically refresh the dependencies
 ```
 
 Everything is now in place to run your application. Run:
 
 ```bash theme={"theme":{"light":"github-light-high-contrast","dark":"github-dark-high-contrast"}}
-./kvstore -kv-home /tmp/badger-home
+./mini-comet-chain \
+  -kv-home /tmp/kvstore-home \
+  -socket-addr unix:///tmp/mini-comet-chain.sock
 ```
 
 The application will start, and you should see an output similar to the following:
@@ -635,11 +629,14 @@ I[2023-04-25|17:01:28.726] Waiting for new connection...
 ```
 
 Then we need to start the CometBFT service and point it to our application.
-Open a new terminal window and cd to the same folder where the app is running.
-Then execute the following command:
+Open a new terminal window and execute the following command. CometBFT v0.39.0
+uses the `start` subcommand (not `node`). The absolute Unix socket path also
+avoids depending on the working directory of either terminal:
 
 ```bash theme={"theme":{"light":"github-light-high-contrast","dark":"github-dark-high-contrast"}}
-go run github.com/cometbft/cometbft/cmd/cometbft@v0.38.0 node --home /tmp/cometbft-home --proxy_app=unix://example.sock
+go run github.com/cometbft/cometbft/cmd/cometbft@v0.39.0 start \
+  --home /tmp/cometbft-home \
+  --proxy_app unix:///tmp/mini-comet-chain.sock
 ```
 
 This should start the full node and connect to our ABCI application, which will be
