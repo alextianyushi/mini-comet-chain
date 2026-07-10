@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
@@ -27,7 +28,8 @@ func (app *KVStoreApplication) Query(_ context.Context, req *abcitypes.RequestQu
 }
 
 func (app *KVStoreApplication) CheckTx(_ context.Context, check *abcitypes.RequestCheckTx) (*abcitypes.ResponseCheckTx, error) {
-	return &abcitypes.ResponseCheckTx{Code: abcitypes.CodeTypeOK}, nil
+	code := app.isValid(check.Tx)
+	return &abcitypes.ResponseCheckTx{Code: code}, nil
 }
 
 func (app *KVStoreApplication) InitChain(_ context.Context, chain *abcitypes.RequestInitChain) (*abcitypes.ResponseInitChain, error) {
@@ -73,4 +75,13 @@ func (app KVStoreApplication) ExtendVote(_ context.Context, extend *abcitypes.Re
 
 func (app *KVStoreApplication) VerifyVoteExtension(_ context.Context, verify *abcitypes.RequestVerifyVoteExtension) (*abcitypes.ResponseVerifyVoteExtension, error) {
 	return &abcitypes.ResponseVerifyVoteExtension{}, nil
+}
+
+func (app *KVStoreApplication) isValid(tx []byte) uint32 {
+	// check format
+	parts := bytes.Split(tx, []byte("="))
+	if len(parts) != 2 {
+		return 1
+	}
+	return 0
 }
