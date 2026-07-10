@@ -586,6 +586,26 @@ signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
 ## 1.5 Initializing and Running
 
+For this project, the simplest option is to use the included startup script. It
+builds the KV store, initializes CometBFT on the first run, and starts both
+processes together:
+
+```bash theme={"theme":{"light":"github-light-high-contrast","dark":"github-dark-high-contrast"}}
+./start.sh
+```
+
+Press `Ctrl+C` to stop both processes. The individual commands below explain
+what the script runs internally and remain useful for troubleshooting. By
+default, persistent data is stored under the project's `data/` directory:
+
+- `data/cometbft/` contains the CometBFT configuration and blockchain data.
+- `data/kvstore/badger/` contains the BadgerDB key-value data.
+- `data/mini-comet-chain.sock` is the temporary Unix socket and is removed on shutdown.
+
+The complete `data/` directory is excluded from Git.
+
+### Auxiliary Information
+
 Our application is almost ready to run, but first we'll need to populate the CometBFT configuration files.
 The following command will create a `cometbft-home` directory in your project and add a basic set of configuration files in `cometbft-home/config/`.
 For more information on what these files contain, see [the configuration documentation](https://github.com/cometbft/cometbft/blob/v0.39.x/docs/core/configuration.md).

@@ -1,2 +1,5 @@
 # Go build output
 /mini-comet-chain
+
+# Local blockchain and KV store data
+/data/
