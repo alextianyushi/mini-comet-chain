@@ -25,7 +25,28 @@ func (app *KVStoreApplication) Info(_ context.Context, info *abcitypes.RequestIn
 }
 
 func (app *KVStoreApplication) Query(_ context.Context, req *abcitypes.RequestQuery) (*abcitypes.ResponseQuery, error) {
-	return &abcitypes.ResponseQuery{}, nil
+	resp := abcitypes.ResponseQuery{Key: req.Data}
+
+	dbErr := app.db.View(func(txn *badger.Txn) error {
+		item, err := txn.Get(req.Data)
+		if err != nil {
+			if err != badger.ErrKeyNotFound {
+				return err
+			}
+			resp.Log = "key does not exist"
+			return nil
+		}
+
+		return item.Value(func(val []byte) error {
+			resp.Log = "exists"
+			resp.Value = val
+			return nil
+		})
+	})
+	if dbErr != nil {
+		log.Panicf("Error reading database, unable to execute query: %v", dbErr)
+	}
+	return &resp, nil
 }
 
 func (app *KVStoreApplication) CheckTx(_ context.Context, check *abcitypes.RequestCheckTx) (*abcitypes.ResponseCheckTx, error) {
