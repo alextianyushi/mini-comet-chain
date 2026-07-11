@@ -62,7 +62,7 @@ Base64 in JSON. For example, `Y29tZXRiZnQ=` and `cm9ja3M=` decode to
 ## Height and AppHash
 
 For multi-node execution, every validator must reach the same state. The
-application will persist two internal values with each block:
+application persists two internal values with each block:
 
 ```text
 height   = latest committed block height

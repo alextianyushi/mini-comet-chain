@@ -41,7 +41,10 @@ func main() {
 		}
 	}()
 
-	app := NewKVStoreApplication(db)
+	app, err := NewKVStoreApplication(db)
+	if err != nil {
+		log.Fatalf("Loading application state: %v", err)
+	}
 	logger := cmtlog.NewTMLogger(cmtlog.NewSyncWriter(os.Stdout))
 
 	server := abciserver.NewSocketServer(socketAddr, app)
