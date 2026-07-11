@@ -2,6 +2,38 @@
 
 A KV store blockchain built with Go, CometBFT v0.39.0, ABCI, and BadgerDB.
 
+## Environment Setup
+
+Requirements:
+
+- Go 1.26.5 or later
+- Bash
+- `curl` for RPC requests
+- `jq` (optional) for formatting JSON responses
+
+Check your Go installation:
+
+```bash
+go version
+go env GOROOT
+```
+
+Download the project dependencies and enable the scripts:
+
+```bash
+go mod download
+chmod +x setup-four-nodes.sh start-four-nodes.sh
+```
+
+Run the tests to confirm the environment is ready:
+
+```bash
+go test ./...
+```
+
+You do not need to install CometBFT globally. `setup-four-nodes.sh` installs
+CometBFT v0.39.0 into the local ignored `bin/` directory.
+
 ## Components
 
 - **CometBFT** orders transactions, produces blocks, and runs consensus.
