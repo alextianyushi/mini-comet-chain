@@ -17,8 +17,7 @@ if [[ -e "$DATA_DIR" ]]; then
   exit 1
 fi
 
-echo "Building the KV application and CometBFT..."
-go build -mod=mod -o mini-comet-chain .
+echo "Installing CometBFT..."
 mkdir -p "$PROJECT_DIR/bin"
 GOBIN="$PROJECT_DIR/bin" go install "github.com/cometbft/cometbft/cmd/cometbft@$COMETBFT_VERSION"
 

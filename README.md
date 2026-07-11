@@ -93,7 +93,7 @@ application persists two internal values with each block:
 
 ```text
 height   = latest committed block height
-AppHash  = deterministic application state hash
+AppHash  = deterministic application execution hash
 ```
 
 The initial hash-chain design is:
@@ -125,6 +125,9 @@ the application executes block 10. Therefore, the execution result of block
 The calculation must use deterministic byte encoding and block transaction
 order. It must not depend on local time, paths, or node-specific data.
 
+This hash commits to the execution history. It is not a Merkle root of every
+KV currently stored in BadgerDB.
+
 ## Four-Node Design
 
 The target network has four validators with equal voting power:
@@ -147,3 +150,30 @@ online validators.
 Every node executes the same ordered transactions independently. Correct,
 deterministic execution produces the same height, `AppHash`, and logical KV
 state on all four nodes.
+
+## Tests
+
+Run the KV application tests:
+
+```bash
+go test ./...
+```
+
+The tests cover height and AppHash persistence, restart recovery, deterministic
+hashing, proposal validation, commit order, and unsupported snapshot handling.
+They use temporary BadgerDB directories and do not modify `data/`.
+
+Run the race detector with:
+
+```bash
+go test -race ./...
+```
+
+The four-node network checks are currently performed through
+`setup-four-nodes.sh` and `start-four-nodes.sh`.
+
+## Reference
+
+See `docs/cometbft-kvstore-reference.md` for the adapted CometBFT KV store
+tutorial. It is background material; the commands in this README are the
+current instructions for this repository.

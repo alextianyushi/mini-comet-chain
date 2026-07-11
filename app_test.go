@@ -85,6 +85,36 @@ func TestCommitRequiresFinalizedBlock(t *testing.T) {
 	}
 }
 
+func TestProcessProposalRejectsInvalidTransaction(t *testing.T) {
+	db := openTestDB(t, t.TempDir())
+	defer db.Close()
+	app := newTestApp(t, db)
+
+	response, err := app.ProcessProposal(context.Background(), &abcitypes.RequestProcessProposal{
+		Txs: [][]byte{[]byte("valid=value"), []byte("invalid")},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if response.Status != abcitypes.ResponseProcessProposal_REJECT {
+		t.Fatalf("status = %v, want REJECT", response.Status)
+	}
+}
+
+func TestSnapshotChunkIsNotAccepted(t *testing.T) {
+	db := openTestDB(t, t.TempDir())
+	defer db.Close()
+	app := newTestApp(t, db)
+
+	response, err := app.ApplySnapshotChunk(context.Background(), &abcitypes.RequestApplySnapshotChunk{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if response.Result != abcitypes.ResponseApplySnapshotChunk_ABORT {
+		t.Fatalf("result = %v, want ABORT", response.Result)
+	}
+}
+
 func executeTestBlock(t *testing.T, dir string, height int64, txs [][]byte) []byte {
 	t.Helper()
 	db := openTestDB(t, dir)

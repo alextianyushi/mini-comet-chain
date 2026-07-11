@@ -50,9 +50,8 @@ func (app *KVStoreApplication) Info(_ context.Context, info *abcitypes.RequestIn
 
 func (app *KVStoreApplication) Query(_ context.Context, req *abcitypes.RequestQuery) (*abcitypes.ResponseQuery, error) {
 	app.mu.RLock()
-	height := app.height
-	app.mu.RUnlock()
-	resp := abcitypes.ResponseQuery{Key: req.Data, Height: height}
+	defer app.mu.RUnlock()
+	resp := abcitypes.ResponseQuery{Key: req.Data, Height: app.height}
 
 	dbErr := app.db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(req.Data)
@@ -64,11 +63,13 @@ func (app *KVStoreApplication) Query(_ context.Context, req *abcitypes.RequestQu
 			return nil
 		}
 
-		return item.Value(func(val []byte) error {
-			resp.Log = "exists"
-			resp.Value = val
-			return nil
-		})
+		value, err := item.ValueCopy(nil)
+		if err != nil {
+			return err
+		}
+		resp.Log = "exists"
+		resp.Value = value
+		return nil
 	})
 	if dbErr != nil {
 		return nil, fmt.Errorf("read query from database: %w", dbErr)
@@ -90,6 +91,11 @@ func (app *KVStoreApplication) PrepareProposal(_ context.Context, proposal *abci
 }
 
 func (app *KVStoreApplication) ProcessProposal(_ context.Context, proposal *abcitypes.RequestProcessProposal) (*abcitypes.ResponseProcessProposal, error) {
+	for _, tx := range proposal.Txs {
+		if app.isValid(tx) != 0 {
+			return &abcitypes.ResponseProcessProposal{Status: abcitypes.ResponseProcessProposal_REJECT}, nil
+		}
+	}
 	return &abcitypes.ResponseProcessProposal{Status: abcitypes.ResponseProcessProposal_ACCEPT}, nil
 }
 
@@ -172,8 +178,7 @@ func (app *KVStoreApplication) LoadSnapshotChunk(_ context.Context, chunk *abcit
 }
 
 func (app *KVStoreApplication) ApplySnapshotChunk(_ context.Context, chunk *abcitypes.RequestApplySnapshotChunk) (*abcitypes.ResponseApplySnapshotChunk, error) {
-
-	return &abcitypes.ResponseApplySnapshotChunk{Result: abcitypes.ResponseApplySnapshotChunk_ACCEPT}, nil
+	return &abcitypes.ResponseApplySnapshotChunk{Result: abcitypes.ResponseApplySnapshotChunk_ABORT}, nil
 }
 
 func (app *KVStoreApplication) ExtendVote(_ context.Context, extend *abcitypes.RequestExtendVote) (*abcitypes.ResponseExtendVote, error) {

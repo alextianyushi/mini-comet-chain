@@ -1,3 +1,8 @@
+> **Reference document:** This is an adapted CometBFT KV store tutorial kept
+> for background reading. Some commands describe the original single-node
+> tutorial and do not match this repository's four-node setup. Use the root
+> `README.md` for the current build, setup, and run instructions.
+
 > ## Documentation Index
 >
 > Fetch the complete documentation index at: https://docs.cosmos.network/llms.txt

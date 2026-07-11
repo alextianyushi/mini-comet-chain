@@ -20,7 +20,7 @@ var socketAddr string
 
 func init() {
 	flag.StringVar(&homeDir, "kv-home", "", "Path to the kvstore directory (if empty, uses $HOME/.kvstore)")
-	flag.StringVar(&socketAddr, "socket-addr", "unix://example.sock", "Unix domain socket address (if empty, uses \"unix://example.sock\"")
+	flag.StringVar(&socketAddr, "socket-addr", "unix://example.sock", "ABCI Unix socket address")
 }
 
 func main() {
