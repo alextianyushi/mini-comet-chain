@@ -11,25 +11,43 @@ A KV store blockchain built with Go, CometBFT v0.39.0, ABCI, and BadgerDB.
 
 ## Run
 
+Create the four validator configurations once:
+
 ```bash
-./start.sh
+./setup-four-nodes.sh
 ```
 
-The script builds the application, initializes CometBFT when needed, and starts
-both processes. Press `Control+C` to stop them.
+Then start all four KV applications and CometBFT nodes:
+
+```bash
+./start-four-nodes.sh
+```
+
+Press `Control+C` to stop the complete network. To create a new chain, remove
+`data/` and run the setup script again.
+
+RPC endpoints:
+
+```text
+node1  http://127.0.0.1:26657
+node2  http://127.0.0.1:26757
+node3  http://127.0.0.1:26857
+node4  http://127.0.0.1:26957
+```
 
 Runtime data is stored locally and excluded from Git:
 
 ```text
 data/
-├── cometbft/          # Blocks, consensus data, keys, and configuration
-├── kvstore/badger/    # Committed KV state
-└── mini-comet-chain.sock
+├── node1/{cometbft,kvstore}
+├── node2/{cometbft,kvstore}
+├── node3/{cometbft,kvstore}
+└── node4/{cometbft,kvstore}
 ```
 
 ## Transaction Flow
 
-Submit a `key=value` transaction:
+Submit a `key=value` transaction to any node. This example uses node1:
 
 ```bash
 curl -s 'localhost:26657/broadcast_tx_commit?tx="cometbft=rocks"'
@@ -49,11 +67,20 @@ FinalizeBlock executes the KV update
 Commit persists it in BadgerDB
 ```
 
-Query a value:
+After the transaction is committed and synchronized, the value can be queried
+from any node:
 
 ```bash
 curl -s 'localhost:26657/abci_query?data="cometbft"'
+curl -s 'localhost:26757/abci_query?data="cometbft"'
+curl -s 'localhost:26857/abci_query?data="cometbft"'
+curl -s 'localhost:26957/abci_query?data="cometbft"'
 ```
+
+All four queries return the same key and value because every validator executes
+the same committed transactions and stores the same logical KV state. The
+reported height is the latest application height at the moment each query is
+handled.
 
 ABCI returns keys and values as bytes. CometBFT represents those bytes as
 Base64 in JSON. For example, `Y29tZXRiZnQ=` and `cm9ja3M=` decode to
@@ -80,6 +107,20 @@ new AppHash = SHA-256(
 `FinalizeBlock` calculates the new hash. `Commit` atomically stores the KV
 updates, height, and hash. After a restart, `Info` returns the saved height and
 hash to CometBFT so it can replay any missing blocks.
+
+An AppHash is recorded in the next block header. For example:
+
+```text
+Execute block 10
+    ↓
+Calculate AppHash 10
+    ↓
+Store AppHash 10 in the header of block 11
+```
+
+This one-block delay exists because the header of block 10 is created before
+the application executes block 10. Therefore, the execution result of block
+`H` is committed as `app_hash` in block `H+1`.
 
 The calculation must use deterministic byte encoding and block transaction
 order. It must not depend on local time, paths, or node-specific data.

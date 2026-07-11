@@ -591,11 +591,12 @@ builds the KV store, initializes CometBFT on the first run, and starts both
 processes together:
 
 ```bash theme={"theme":{"light":"github-light-high-contrast","dark":"github-dark-high-contrast"}}
-./start.sh
+./setup-four-nodes.sh
+./start-four-nodes.sh
 ```
 
-Press `Ctrl+C` to stop both processes. The individual commands below explain
-what the script runs internally and remain useful for troubleshooting. By
+Press `Ctrl+C` to stop the network. The individual commands below explain
+what the scripts run internally and remain useful for troubleshooting. By
 default, persistent data is stored under the project's `data/` directory:
 
 - `data/cometbft/` contains the CometBFT configuration and blockchain data.
