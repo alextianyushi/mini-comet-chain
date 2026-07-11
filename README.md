@@ -118,6 +118,19 @@ ABCI returns keys and values as bytes. CometBFT represents those bytes as
 Base64 in JSON. For example, `Y29tZXRiZnQ=` and `cm9ja3M=` decode to
 `cometbft` and `rocks`.
 
+Compare the latest height and AppHash across all four nodes:
+
+```bash
+for port in 26657 26757 26857 26957; do
+  curl -s "localhost:$port/status" |
+    jq -r '.result.sync_info | "height=\(.latest_block_height) app_hash=\(.latest_app_hash)"' &
+done
+wait
+```
+
+Synchronized nodes should report the same AppHash when compared at the same
+height.
+
 ## Height and AppHash
 
 For multi-node execution, every validator must reach the same state. The
